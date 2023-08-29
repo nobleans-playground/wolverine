@@ -39,6 +39,7 @@ class ExampleBot(Bot):
         return 'Jeroen'
 
     def __init__(self, id: int, grid_size: tuple[int, int]):
+        pass
 
     def determine_next_move(self, snake: Snake, other_snakes: List[Snake], candies: List[np.array]) -> Move:
         moves = self._determine_possible_moves(snake, other_snakes[0])
