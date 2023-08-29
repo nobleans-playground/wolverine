@@ -32,11 +32,13 @@ class ExampleBot(Bot):
 
     @property
     def name(self):
-        return 'Greedy Gerard'
+        return 'Wolverine'
 
     @property
     def contributor(self):
-        return 'Nobleo'
+        return 'Jeroen'
+
+    def __init__(self, id: int, grid_size: tuple[int, int]):
 
     def determine_next_move(self, snake: Snake, other_snakes: List[Snake], candies: List[np.array]) -> Move:
         moves = self._determine_possible_moves(snake, other_snakes[0])
