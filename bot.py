@@ -38,9 +38,12 @@ class ExampleBot(Bot):
     def contributor(self):
         return 'Jeroen'
 
-    def __init__(self, id: int, grid_size: tuple[int, int]):
+    def __init__(self, id: int, grid_size: Tuple[int, int]):
         self.id = id
         self.grid_size = grid_size
+
+    def head(self, snake: Snake):
+        return snake[0]
 
     def determine_next_move(self, snake: Snake, other_snakes: List[Snake], candies: List[np.array]) -> Move:
         moves = self._determine_possible_moves(snake, other_snakes[0])
@@ -53,14 +56,14 @@ class ExampleBot(Bot):
         """
         # highest priority, a move that is on the grid
         on_grid = [move for move in MOVE_VALUE_TO_DIRECTION
-                   if is_on_grid(snake[0] + MOVE_VALUE_TO_DIRECTION[move], self.grid_size)]
+                   if is_on_grid(self.head(snake) + MOVE_VALUE_TO_DIRECTION[move], self.grid_size)]
         if not on_grid:
             return list(Move)
 
         # then avoid collisions with other snakes
         collision_free = [move for move in on_grid
-                          if is_on_grid(snake[0] + MOVE_VALUE_TO_DIRECTION[move], self.grid_size)
-                          and not collides(snake[0] + MOVE_VALUE_TO_DIRECTION[move], [snake, other_snake])]
+                          if is_on_grid(self.head(snake) + MOVE_VALUE_TO_DIRECTION[move], self.grid_size)
+                          and not collides(self.head(snake) + MOVE_VALUE_TO_DIRECTION[move], [snake, other_snake])]
         if collision_free:
             return collision_free
         else:
