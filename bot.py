@@ -8,6 +8,9 @@ from ...constants import Move, MOVE_VALUE_TO_DIRECTION
 from ...snake import Snake
 
 
+# grid size is x-axis, y-axis
+
+
 def is_on_grid(pos: np.array, grid_size: Tuple[int, int]) -> bool:
     """
     Check if a position is still on the grid
@@ -26,9 +29,7 @@ def collides(pos: np.array, snakes: List[Snake]) -> bool:
 
 
 class ExampleBot(Bot):
-    """
-    Moves randomly, but makes sure it doesn't collide with other snakes
-    """
+    MYSELF, OTHER, CANDY, EMPTY = 1, 2, 3, 4
 
     @property
     def name(self):
@@ -42,35 +43,93 @@ class ExampleBot(Bot):
         self.id = id
         self.grid_size = grid_size
 
-    def head(self, snake: Snake):
-        return snake[0]
+    def _insert_snake(self, snake: Snake, symbol: int):
+        snake_position_iter = iter(snake)
+        snake_length = len(snake)
+        for x in range(snake_length):
+            xy_coordinate = next(snake_position_iter)
+            self.flattened_board[self._flatten(xy_coordinate)] = symbol
+
+    def _insert_candy(self, candy: np.array):
+        pass
 
     def determine_next_move(self, snake: Snake, other_snakes: List[Snake], candies: List[np.array]) -> Move:
-        moves = self._determine_possible_moves(snake, other_snakes[0])
-        return self.choose_move(moves)
+        # flatten the grid into a 1-dimensional array
+        self.flattened_board = self.grid_size[0] * self.grid_size[1] * [self.EMPTY]
 
-    def _determine_possible_moves(self, snake, other_snake) -> List[Move]:
-        """
-        Return a list with all moves that we want to do. Later we'll choose one from this list randomly. This method
-        will be used during unit-testing
-        """
-        # highest priority, a move that is on the grid
-        on_grid = [move for move in MOVE_VALUE_TO_DIRECTION
-                   if is_on_grid(self.head(snake) + MOVE_VALUE_TO_DIRECTION[move], self.grid_size)]
-        if not on_grid:
-            return list(Move)
+        # flatten myself into the board
+        self._insert_snake(snake, self.MYSELF)
 
-        # then avoid collisions with other snakes
-        collision_free = [move for move in on_grid
-                          if is_on_grid(self.head(snake) + MOVE_VALUE_TO_DIRECTION[move], self.grid_size)
-                          and not collides(self.head(snake) + MOVE_VALUE_TO_DIRECTION[move], [snake, other_snake])]
-        if collision_free:
-            return collision_free
+        # flatten other snakes into the board
+        for other_snake in other_snakes:
+            self._insert_snake(other_snake, self.OTHER)
+
+        # flatten candies into the board
+        for candy in candies:
+            self._insert_candy(candy)
+
+        # now see where the head might move next
+        next_head_coordinates_in_reach = self._get_valid_neighbors(self._flatten(self._head(snake)))
+
+        # now remove the in-reach coordinates that are myself
+        next_head_coordinates_in_reach = [flattened_xy_coordinate for flattened_xy_coordinate in next_head_coordinates_in_reach if not self._occupied_by_myself(flattened_xy_coordinate)]
+
+        # now remove the in-reach coordinates that collide with other snakes
+        next_head_coordinates_in_reach = [flattened_xy_coordinate for flattened_xy_coordinate in next_head_coordinates_in_reach if not self._occupied_by_other_snake(flattened_xy_coordinate)]
+
+        # now see if any of the in-reach coordinates have a candy
+        candy_coordinates_in_reach = [flattened_xy_coordinate for flattened_xy_coordinate in next_head_coordinates_in_reach if self._occupied_by_candy(flattened_xy_coordinate)]
+
+        # prefer candy in-reach coordinate over next-head coordinate
+        if len(candy_coordinates_in_reach) > 0:
+            return self._to_move(snake, self._unflatten(candy_coordinates_in_reach[0]))
+
+        # no interesting in-reach coordinates, figure out a global direction towards the nearest candy
+        # TODO
+        return self._to_move(snake, next_head_coordinates_in_reach[0])
+
+    def _head(self, snake: Snake):
+        return snake[0]
+
+    def _grid_width(self) -> int:
+        return self.grid_size[0]
+
+    def _grid_height(self) -> int:
+        return self.grid_size[1]
+
+    def _flatten(self, xy_coordinate) -> int:
+        return (self._grid_width() * xy_coordinate[0]) + xy_coordinate[1]
+    
+    def _unflatten(self, flattened_xy_coordinate) -> Tuple[int, int]:
+        return divmod(flattened_xy_coordinate, self._grid_width());
+
+    def _is_on_board(self, xy_coordinate) -> bool:
+        return xy_coordinate[0] % self._grid_width() == xy_coordinate[0] and xy_coordinate[1] % self._grid_height() == xy_coordinate[1]
+
+    def _get_valid_neighbors(self, flattened_xy_coordinate) -> List[int]:
+        x, y = self._unflatten(flattened_xy_coordinate)
+        # RIGHT, LEFT, UP, DOWN
+        possible_neighbors = ((x+1, y), (x-1, y), (x, y+1), (x, y-1))
+        return [self._flatten(n) for n in possible_neighbors if self._is_on_board(n)]
+
+    def _occupied_by_myself(self, flattened_xy_coordinate) -> bool:
+        return self.flattened_board[flattened_xy_coordinate] == self.MYSELF
+
+    def _occupied_by_other_snake(self, flattened_xy_coordinate) -> bool:
+        return self.flattened_board[flattened_xy_coordinate] == self.OTHER
+
+    def _occupied_by_candy(self, flattened_xy_coordinate) -> bool:
+        return self.flattened_board[flattened_xy_coordinate] == self.CANDY
+
+    def _to_move(self, snake: Snake, next_xy_coordinate: Tuple[int, int]) -> Move:
+        current_head_coordinate = self._head(snake)
+        if current_head_coordinate[0] == next_xy_coordinate[0]:
+            if current_head_coordinate[1] < next_xy_coordinate[1]:
+                return MOVE_VALUE_TO_DIRECTION[Move.UP]
+            else:
+                return MOVE_VALUE_TO_DIRECTION[Move.DOWN]
         else:
-            return on_grid
-
-    def choose_move(self, moves: List[Move]) -> Move:
-        """
-        Randomly pick a move
-        """
-        return choice(moves)
+            if current_head_coordinate[0] < next_xy_coordinate[0]:
+                return MOVE_VALUE_TO_DIRECTION[Move.RIGHT]
+            else:
+                return MOVE_VALUE_TO_DIRECTION[Move.LEFT]
