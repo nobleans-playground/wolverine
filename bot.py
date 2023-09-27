@@ -86,7 +86,7 @@ class ExampleBot(Bot):
 
         # no interesting in-reach coordinates, figure out a global direction towards the nearest candy
         # TODO
-        return self._to_move(snake, next_head_coordinates_in_reach[0])
+        return self._to_move(snake, self._unflatten(next_head_coordinates_in_reach[0]))
 
     def _head(self, snake: Snake):
         return snake[0]
@@ -125,11 +125,11 @@ class ExampleBot(Bot):
         current_head_coordinate = self._head(snake)
         if current_head_coordinate[0] == next_xy_coordinate[0]:
             if current_head_coordinate[1] < next_xy_coordinate[1]:
-                return MOVE_VALUE_TO_DIRECTION[Move.UP]
+                return Move.UP
             else:
-                return MOVE_VALUE_TO_DIRECTION[Move.DOWN]
+                return Move.DOWN
         else:
             if current_head_coordinate[0] < next_xy_coordinate[0]:
-                return MOVE_VALUE_TO_DIRECTION[Move.RIGHT]
+                return Move.RIGHT
             else:
-                return MOVE_VALUE_TO_DIRECTION[Move.LEFT]
+                return Move.LEFT
