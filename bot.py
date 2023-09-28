@@ -94,8 +94,10 @@ class ExampleBot(Bot):
         # Then determine the next step in the closest path
         # https://www.geeksforgeeks.org/dijkstras-shortest-path-algorithm-greedy-algo-7/
         # https://www.geeksforgeeks.org/python-program-for-dijkstras-shortest-path-algorithm-greedy-algo-7/
-
-        return self._to_move(snake, self._unflatten(next_head_coordinates_in_reach[0]))
+        if len(next_head_coordinates_in_reach) > 0:
+            return self._to_move(snake, self._unflatten(next_head_coordinates_in_reach[0]))
+        # hmm, no next move possible, then simply die
+        return Move.DOWN
 
     def _head(self, snake: Snake):
         return snake[0]
