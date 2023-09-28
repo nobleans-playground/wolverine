@@ -86,6 +86,15 @@ class ExampleBot(Bot):
 
         # no interesting in-reach coordinates, figure out a global direction towards the nearest candy
         # TODO
+        # Generate a (width*height)*(width*height) graph
+        # where the column index is my flattened head coordinate (source vertex)
+        # where the row index is the flattened other vertex coordinate (target vertex)
+        # Initialize values to infinite, mark non-snake coordinates as distance 1
+        # Find the shortest path from source vertex to each candy vertex and pick the closest one
+        # Then determine the next step in the closest path
+        # https://www.geeksforgeeks.org/dijkstras-shortest-path-algorithm-greedy-algo-7/
+        # https://www.geeksforgeeks.org/python-program-for-dijkstras-shortest-path-algorithm-greedy-algo-7/
+
         return self._to_move(snake, self._unflatten(next_head_coordinates_in_reach[0]))
 
     def _head(self, snake: Snake):
